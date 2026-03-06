@@ -1,5 +1,8 @@
 """FastAPI application entry-point for the Research Copilot."""
 
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,24 +16,12 @@ from app.tools.web_search_tool import WebSearchTool
 from app.tools.retriever_tool import RetrieverTool
 from app.tools.wikipedia_tool import WikipediaTool
 
-app = FastAPI(title="Research Copilot API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(research_router)
-
 _agent: ResearchAgent | None = None
 _vectorstore: VectorStoreService | None = None
 
 
-@app.on_event("startup")
-def startup() -> None:
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     global _agent, _vectorstore
     settings = get_settings()
     _vectorstore = VectorStoreService(
@@ -49,6 +40,20 @@ def startup() -> None:
         openai_api_key=settings.openai_api_key,
         confidence_service=ConfidenceService(),
     )
+    yield
+
+
+app = FastAPI(title="Research Copilot API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(research_router)
 
 
 def get_agent() -> ResearchAgent:
