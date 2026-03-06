@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-multipart
+openai
+pydantic-settings
+numpy
+requests
+streamlit
+PyPDF2
+pytest
+python-dotenv
