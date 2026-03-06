@@ -1,7 +1,7 @@
 """Prompt templates stored as constants (never inline)."""
 
 CLASSIFICATION_PROMPT = """\
-You are a customer feedback classifier. Analyse the feedback text below and \
+You are a customer feedback classifier. Analyze the feedback text below and \
 return a JSON object with exactly these fields:
 
 - "sentiment": one of "positive", "neutral", or "negative"
