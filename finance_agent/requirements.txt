@@ -1,7 +1,8 @@
 fastapi
 uvicorn
 python-multipart
-openai
+langchain>=1.2,<2
+langchain-openai>=1.1,<2
 pydantic-settings
 streamlit
 requests

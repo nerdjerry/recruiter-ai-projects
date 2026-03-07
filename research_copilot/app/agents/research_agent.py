@@ -1,8 +1,8 @@
-"""Research agent — orchestrates tools and synthesises answers (no LangChain)."""
+"""Research agent — orchestrates tools and synthesises answers using LangChain."""
 
 from __future__ import annotations
 
-import openai
+from langchain_openai import ChatOpenAI
 
 from app.core.prompts import RESEARCH_SYNTHESIS_PROMPT
 from app.models.schemas import Citation, ResearchResponse, ToolResult
@@ -21,8 +21,11 @@ class ResearchAgent:
         confidence_service: ConfidenceService,
     ) -> None:
         self._tools = tools
-        self._chat_model = chat_model
-        self._client = openai.OpenAI(api_key=openai_api_key)
+        self._llm = ChatOpenAI(
+            model=chat_model,
+            api_key=openai_api_key,
+            temperature=0.3,
+        )
         self._confidence = confidence_service
 
     def research(
@@ -76,9 +79,5 @@ class ResearchAgent:
         )
 
     def _synthesise(self, prompt: str) -> str:
-        resp = self._client.chat.completions.create(
-            model=self._chat_model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
-        )
-        return resp.choices[0].message.content or ""
+        response = self._llm.invoke([("human", prompt)])
+        return response.content or ""

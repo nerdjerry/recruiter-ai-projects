@@ -1,24 +1,25 @@
 from __future__ import annotations
 
 import numpy as np
-from openai import OpenAI
+from langchain_openai import OpenAIEmbeddings
 
 from app.core.config import Settings
 
 
 class EmbeddingService:
-    """Handles text embedding and vector similarity (SRP)."""
+    """Handles text embedding and vector similarity using LangChain (SRP)."""
 
     def __init__(self, settings: Settings) -> None:
-        self._client = OpenAI(api_key=settings.openai_api_key)
-        self._model = settings.embedding_model
+        self._embeddings = OpenAIEmbeddings(
+            model=settings.embedding_model,
+            api_key=settings.openai_api_key,
+        )
 
     def get_embedding(self, text: str) -> list[float]:
-        response = self._client.embeddings.create(
-            input=text,
-            model=self._model,
-        )
-        return response.data[0].embedding
+        return self._embeddings.embed_query(text)
+
+    async def aget_embedding(self, text: str) -> list[float]:
+        return await self._embeddings.aembed_query(text)
 
     @staticmethod
     def compute_similarity(embedding_a: list[float], embedding_b: list[float]) -> float:

@@ -35,21 +35,20 @@ class TestScreeningResponse:
 
 
 class TestScoringService:
-    @patch("app.services.scorer.OpenAI")
-    def test_explain_match_returns_candidate(self, mock_openai_cls: MagicMock) -> None:
-        mock_response = MagicMock()
-        mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.content = json.dumps(
-            {
-                "name": "Alice",
-                "score": 0.88,
-                "explanation": "Strong match for Python role.",
-                "skill_gaps": ["Kubernetes"],
-            }
+    @patch("app.services.scorer.ChatOpenAI")
+    def test_explain_match_returns_candidate(self, mock_chat_cls: MagicMock) -> None:
+        mock_llm = MagicMock()
+        mock_chat_cls.return_value = mock_llm
+        mock_llm.invoke.return_value = MagicMock(
+            content=json.dumps(
+                {
+                    "name": "Alice",
+                    "score": 0.88,
+                    "explanation": "Strong match for Python role.",
+                    "skill_gaps": ["Kubernetes"],
+                }
+            )
         )
-        mock_client = MagicMock()
-        mock_client.chat.completions.create.return_value = mock_response
-        mock_openai_cls.return_value = mock_client
 
         settings = Settings(openai_api_key="test-key", chat_model="gpt-4o-mini")
         service = ScoringService(settings)

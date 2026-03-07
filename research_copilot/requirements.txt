@@ -1,9 +1,11 @@
 fastapi>=0.115,<1
 uvicorn>=0.32,<1
 python-multipart>=0.0.9,<1
-openai>=1.50,<2
+langchain>=1.2,<2
+langchain-openai>=1.1,<2
+langchain-community>=0.4,<1
+faiss-cpu>=1.13,<2
 pydantic-settings>=2.0,<3
-numpy>=1.26,<3
 requests>=2.31,<3
 streamlit>=1.38,<2
 PyPDF2>=3.0,<4

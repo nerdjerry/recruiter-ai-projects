@@ -1,6 +1,6 @@
 # PROJECT 04 — Real-Time Research Copilot
 > **Tier 2 — Intermediate (Tool Calling + RAG)**
-> `Python` · `OpenAI API` · `Tavily API` · `NumPy` · `Streamlit`
+> `Python` · `LangChain` · `OpenAI Functions` · `Tavily API` · `FAISS` · `Streamlit`
 
 **One line:** Ask any question and watch the agent search, retrieve, synthesize, and cite its answer live.
 

@@ -1,4 +1,4 @@
-"""Tests for ClassifyTool — OpenAI calls are mocked."""
+"""Tests for ClassifyTool — LangChain calls are mocked."""
 
 from unittest.mock import MagicMock, patch
 
@@ -12,19 +12,17 @@ def _make_settings() -> Settings:
     return Settings(openai_api_key="test-key", chat_model="gpt-4o")
 
 
-def _mock_openai_response(json_str: str) -> MagicMock:
-    choice = MagicMock()
-    choice.message.content = json_str
+def _mock_langchain_response(json_str: str) -> MagicMock:
     response = MagicMock()
-    response.choices = [choice]
+    response.content = json_str
     return response
 
 
 @pytest.fixture
 def classify_tool():
-    with patch("app.tools.classify_tool.OpenAI") as mock_cls:
+    with patch("app.tools.classify_tool.ChatOpenAI") as mock_cls:
         tool = ClassifyTool(_make_settings())
-        tool._client = mock_cls.return_value
+        tool._llm = mock_cls.return_value
         yield tool
 
 
@@ -45,9 +43,7 @@ def test_classify_returns_valid_classification(
         f'{{"intent":"{intent}","urgency":"{urgency}",'
         f'"confidence":{confidence}}}'
     )
-    classify_tool._client.chat.completions.create.return_value = (
-        _mock_openai_response(json_str)
-    )
+    classify_tool._llm.invoke.return_value = _mock_langchain_response(json_str)
 
     result = classify_tool.run("test body", "test subject")
 
@@ -57,10 +53,8 @@ def test_classify_returns_valid_classification(
 
 
 def test_classify_calls_openai_once(classify_tool):
-    classify_tool._client.chat.completions.create.return_value = (
-        _mock_openai_response(
-            '{"intent":"inquiry","urgency":"low","confidence":0.9}'
-        )
+    classify_tool._llm.invoke.return_value = _mock_langchain_response(
+        '{"intent":"inquiry","urgency":"low","confidence":0.9}'
     )
     classify_tool.run("body", "subject")
-    classify_tool._client.chat.completions.create.assert_called_once()
+    classify_tool._llm.invoke.assert_called_once()

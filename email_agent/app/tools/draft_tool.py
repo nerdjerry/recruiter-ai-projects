@@ -1,11 +1,11 @@
-"""Tool: generate a draft reply for a classified email via OpenAI."""
+"""Tool: generate a draft reply for a classified email via LangChain."""
 
 from __future__ import annotations
 
 import json
 import logging
 
-from openai import OpenAI
+from langchain_openai import ChatOpenAI
 
 from app.core.config import Settings
 from app.core.prompts import DRAFT_REPLY_PROMPT
@@ -18,8 +18,11 @@ class DraftTool:
     """SRP: draft-reply generation only."""
 
     def __init__(self, settings: Settings) -> None:
-        self._model = settings.chat_model
-        self._client = OpenAI(api_key=settings.openai_api_key)
+        self._llm = ChatOpenAI(
+            model=settings.chat_model,
+            api_key=settings.openai_api_key,
+            temperature=0.7,
+        )
 
     def run(
         self, email: EmailMessage, classification: Classification
@@ -30,11 +33,7 @@ class DraftTool:
             subject=email.subject,
             body=email.body,
         )
-        response = self._client.chat.completions.create(
-            model=self._model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-        )
-        raw = response.choices[0].message.content or "{}"
+        response = self._llm.invoke([("human", prompt)])
+        raw = response.content or "{}"
         data = json.loads(raw)
         return DraftReply(email_id=email.id, **data)

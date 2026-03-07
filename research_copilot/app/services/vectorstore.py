@@ -1,12 +1,13 @@
-"""Document ingestion and numpy-based vector store (no FAISS required)."""
+"""Document ingestion and FAISS-based vector store with persistence via LangChain."""
 
 from __future__ import annotations
 
+import os
 import uuid
 from datetime import datetime, timezone
 
-import numpy as np
-import openai
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
 
 from app.models.schemas import DocumentInfo, ToolResult
 
@@ -24,28 +25,50 @@ def _chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str
 
 
 class VectorStoreService:
-    """In-memory vector store using numpy cosine similarity."""
+    """FAISS-backed vector store with persistence via LangChain."""
 
     def __init__(
-        self, embedding_model: str, openai_api_key: str
+        self, embedding_model: str, vectorstore_path: str, openai_api_key: str
     ) -> None:
         self._embedding_model = embedding_model
-        self._client = openai.OpenAI(api_key=openai_api_key)
+        self._vectorstore_path = vectorstore_path
+        self._embeddings = OpenAIEmbeddings(
+            model=embedding_model, api_key=openai_api_key
+        )
         self._documents: list[DocumentInfo] = []
-        self._chunks: list[dict] = []  # {text, doc_id, embedding}
+        self._faiss: FAISS | None = None
+        self._load()
 
-    def _embed(self, texts: list[str]) -> np.ndarray:
-        resp = self._client.embeddings.create(model=self._embedding_model, input=texts)
-        return np.array([d.embedding for d in resp.data])
+    def _load(self) -> None:
+        """Load persisted FAISS index from disk if it exists."""
+        if os.path.exists(self._vectorstore_path):
+            try:
+                self._faiss = FAISS.load_local(
+                    self._vectorstore_path,
+                    self._embeddings,
+                    allow_dangerous_deserialization=True,
+                )
+            except Exception:
+                self._faiss = None
+
+    def _save(self) -> None:
+        """Persist FAISS index to disk."""
+        if self._faiss is not None:
+            os.makedirs(os.path.dirname(self._vectorstore_path) or ".", exist_ok=True)
+            self._faiss.save_local(self._vectorstore_path)
 
     def add_document(self, filename: str, text: str) -> DocumentInfo:
         doc_id = uuid.uuid4().hex[:12]
         chunks = _chunk_text(text)
-        embeddings = self._embed(chunks)
-        for i, chunk in enumerate(chunks):
-            self._chunks.append(
-                {"text": chunk, "doc_id": doc_id, "embedding": embeddings[i]}
-            )
+        metadatas = [{"doc_id": doc_id} for _ in chunks]
+
+        if self._faiss is None:
+            self._faiss = FAISS.from_texts(chunks, self._embeddings, metadatas=metadatas)
+        else:
+            self._faiss.add_texts(chunks, metadatas=metadatas)
+
+        self._save()
+
         info = DocumentInfo(
             id=doc_id,
             filename=filename,
@@ -56,22 +79,17 @@ class VectorStoreService:
         return info
 
     def search(self, query: str, top_k: int = 3) -> list[ToolResult]:
-        if not self._chunks:
+        if self._faiss is None:
             return []
-        q_emb = self._embed([query])[0]
-        scores: list[tuple[float, int]] = []
-        for idx, chunk in enumerate(self._chunks):
-            emb = chunk["embedding"]
-            cos = float(np.dot(q_emb, emb) / (np.linalg.norm(q_emb) * np.linalg.norm(emb) + 1e-10))
-            scores.append((cos, idx))
-        scores.sort(key=lambda x: x[0], reverse=True)
-        results: list[ToolResult] = []
-        for score, idx in scores[:top_k]:
-            c = self._chunks[idx]
-            results.append(
-                ToolResult(content=c["text"], source_name="knowledge_base", doc_id=c["doc_id"])
+        results = self._faiss.similarity_search(query, k=top_k)
+        return [
+            ToolResult(
+                content=doc.page_content,
+                source_name="knowledge_base",
+                doc_id=doc.metadata.get("doc_id"),
             )
-        return results
+            for doc in results
+        ]
 
     def list_documents(self) -> list[DocumentInfo]:
         return list(self._documents)

@@ -36,13 +36,12 @@ def _build_agent(tools: list[BaseTool] | None = None) -> ResearchAgent:
     )
 
 
-@patch("app.agents.research_agent.openai.OpenAI")
-def test_agent_calls_all_tools(mock_openai_cls):
-    mock_client = MagicMock()
-    mock_openai_cls.return_value = mock_client
-    mock_client.chat.completions.create.return_value = MagicMock(
-        choices=[MagicMock(message=MagicMock(content="Synthesised answer."))]
-    )
+@patch("app.agents.research_agent.ChatOpenAI")
+def test_agent_calls_all_tools(mock_chat_cls):
+    mock_llm = MagicMock()
+    mock_chat_cls.return_value = mock_llm
+    mock_llm.invoke.return_value = MagicMock(content="Synthesised answer.")
+
     tool_a = _FakeTool("a", [ToolResult(content="A result", source_name="a")])
     tool_b = _FakeTool("b", [ToolResult(content="B result", source_name="b")])
 
@@ -54,13 +53,11 @@ def test_agent_calls_all_tools(mock_openai_cls):
     assert any("b" in c.source for c in resp.citations)
 
 
-@patch("app.agents.research_agent.openai.OpenAI")
-def test_reasoning_trace_captured(mock_openai_cls):
-    mock_client = MagicMock()
-    mock_openai_cls.return_value = mock_client
-    mock_client.chat.completions.create.return_value = MagicMock(
-        choices=[MagicMock(message=MagicMock(content="Answer."))]
-    )
+@patch("app.agents.research_agent.ChatOpenAI")
+def test_reasoning_trace_captured(mock_chat_cls):
+    mock_llm = MagicMock()
+    mock_chat_cls.return_value = mock_llm
+    mock_llm.invoke.return_value = MagicMock(content="Answer.")
 
     agent = _build_agent()
     resp = agent.research("What is AI?")
@@ -69,13 +66,11 @@ def test_reasoning_trace_captured(mock_openai_cls):
     assert any("Synthesising" in s for s in resp.reasoning_trace)
 
 
-@patch("app.agents.research_agent.openai.OpenAI")
-def test_confidence_is_computed(mock_openai_cls):
-    mock_client = MagicMock()
-    mock_openai_cls.return_value = mock_client
-    mock_client.chat.completions.create.return_value = MagicMock(
-        choices=[MagicMock(message=MagicMock(content="Detailed answer."))]
-    )
+@patch("app.agents.research_agent.ChatOpenAI")
+def test_confidence_is_computed(mock_chat_cls):
+    mock_llm = MagicMock()
+    mock_chat_cls.return_value = mock_llm
+    mock_llm.invoke.return_value = MagicMock(content="Detailed answer.")
 
     agent = _build_agent()
     resp = agent.research("Explain gravity")
@@ -83,13 +78,11 @@ def test_confidence_is_computed(mock_openai_cls):
     assert 0.0 <= resp.confidence_score <= 1.0
 
 
-@patch("app.agents.research_agent.openai.OpenAI")
-def test_agent_handles_no_results(mock_openai_cls):
-    mock_client = MagicMock()
-    mock_openai_cls.return_value = mock_client
-    mock_client.chat.completions.create.return_value = MagicMock(
-        choices=[MagicMock(message=MagicMock(content="No data available."))]
-    )
+@patch("app.agents.research_agent.ChatOpenAI")
+def test_agent_handles_no_results(mock_chat_cls):
+    mock_llm = MagicMock()
+    mock_chat_cls.return_value = mock_llm
+    mock_llm.invoke.return_value = MagicMock(content="No data available.")
 
     agent = _build_agent([_FakeTool("empty", [])])
     resp = agent.research("Unknown topic")

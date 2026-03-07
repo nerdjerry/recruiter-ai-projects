@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import date, timedelta
 
-import openai
+from langchain_openai import ChatOpenAI
 
 from app.core.config import Settings
 from app.core.prompts import INSIGHT_PROMPT
@@ -21,8 +21,12 @@ class InsightTool:
         transaction_source: BaseTransactionSource,
         memory_manager: MemoryManager,
     ) -> None:
-        self._client = openai.OpenAI(api_key=config.openai_api_key)
-        self._model = config.chat_model
+        self._llm = ChatOpenAI(
+            model=config.chat_model,
+            api_key=config.openai_api_key,
+            max_tokens=300,
+            temperature=0.7,
+        )
         self._source = transaction_source
         self._memory = memory_manager
 
@@ -49,19 +53,13 @@ class InsightTool:
         goal_text = "\n".join(goals) if goals else "No goals set."
 
         try:
-            response = self._client.chat.completions.create(
-                model=self._model,
-                messages=[{
-                    "role": "user",
-                    "content": INSIGHT_PROMPT.format(
-                        transaction_summary=txn_summary or "No transactions this week.",
-                        user_goals=goal_text,
-                    ),
-                }],
-                max_tokens=300,
-                temperature=0.7,
-            )
-            summary = response.choices[0].message.content.strip()
+            response = self._llm.invoke([
+                ("human", INSIGHT_PROMPT.format(
+                    transaction_summary=txn_summary or "No transactions this week.",
+                    user_goals=goal_text,
+                )),
+            ])
+            summary = response.content.strip()
         except Exception:
             summary = f"You spent ${total_spent:,.2f} this week across {len(by_category)} categories."
 

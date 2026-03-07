@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.concurrency import run_in_threadpool
 
 from app.core.config import Settings, get_settings
 from app.models.schemas import ScreeningResponse
@@ -29,7 +28,7 @@ async def screen_resumes(
     scorer: ScoringService = Depends(_get_scorer),
 ) -> ScreeningResponse:
     max_bytes = settings.max_upload_mb * 1024 * 1024
-    jd_embedding = await run_in_threadpool(embedder.get_embedding, job_description)
+    jd_embedding = await embedder.aget_embedding(job_description)
 
     candidates = []
     for upload in resumes:
@@ -39,9 +38,9 @@ async def screen_resumes(
 
         parser = ParserFactory.get_parser(upload.filename or "file.pdf")
         resume_text = parser.parse(file_bytes, upload.filename or "file.pdf")
-        resume_embedding = await run_in_threadpool(embedder.get_embedding, resume_text)
+        resume_embedding = await embedder.aget_embedding(resume_text)
         similarity = EmbeddingService.compute_similarity(jd_embedding, resume_embedding)
-        result = await run_in_threadpool(scorer.explain_match, job_description, resume_text, similarity)
+        result = await scorer.aexplain_match(job_description, resume_text, similarity)
         candidates.append(result)
 
     candidates.sort(key=lambda c: c.score, reverse=True)

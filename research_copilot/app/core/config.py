@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     tavily_api_key: str = ""
     chat_model: str = "gpt-4o"
     embedding_model: str = "text-embedding-3-small"
+    vectorstore_path: str = "./data/vectorstore"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

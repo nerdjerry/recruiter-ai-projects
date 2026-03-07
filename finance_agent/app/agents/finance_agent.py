@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-import openai
+from langchain_openai import ChatOpenAI
 
 from app.core.config import Settings
 from app.core.prompts import FINANCE_CHAT_PROMPT
@@ -14,7 +14,7 @@ from app.tools.spending_tool import SpendingTool
 
 
 class FinanceAgent:
-    """Conversational finance agent with memory injection (DI)."""
+    """Conversational finance agent with memory injection (DI), powered by LangChain."""
 
     def __init__(
         self,
@@ -28,8 +28,12 @@ class FinanceAgent:
         self._spending = spending_tool
         self._budget = budget_tool
         self._insight = insight_tool
-        self._client = openai.OpenAI(api_key=config.openai_api_key)
-        self._model = config.chat_model
+        self._llm = ChatOpenAI(
+            model=config.chat_model,
+            api_key=config.openai_api_key,
+            max_tokens=500,
+            temperature=0.7,
+        )
 
     def chat(self, message: str) -> ChatResponse:
         self._memory.add_conversation("user", message)
@@ -47,14 +51,14 @@ class FinanceAgent:
             tool_results=tool_results or "No tool results.",
         )
 
-        messages = [{"role": "system", "content": system_prompt}]
-        messages.extend(context["conversation"])
+        messages = [("system", system_prompt)]
+        for msg in context["conversation"]:
+            role = "human" if msg["role"] == "user" else "ai"
+            messages.append((role, msg["content"]))
 
         try:
-            response = self._client.chat.completions.create(
-                model=self._model, messages=messages, max_tokens=500, temperature=0.7,
-            )
-            reply = response.choices[0].message.content.strip()
+            response = self._llm.invoke(messages)
+            reply = response.content.strip()
         except Exception as e:
             reply = f"I encountered an error: {e}. Please check your API key."
 

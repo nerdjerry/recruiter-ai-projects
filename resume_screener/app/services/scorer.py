@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from openai import OpenAI
+from langchain_openai import ChatOpenAI
 
 from app.core.config import Settings
 from app.models.schemas import CandidateResult
@@ -19,15 +19,18 @@ _SYSTEM_PROMPT = (
 
 
 class ScoringService:
-    """Calls the LLM to produce an explanation (SRP).
+    """Calls the LLM via LangChain to produce an explanation (SRP).
 
     Receives a pre-computed similarity score — does NOT depend on EmbeddingService
     (Interface Segregation).
     """
 
     def __init__(self, settings: Settings) -> None:
-        self._client = OpenAI(api_key=settings.openai_api_key)
-        self._model = settings.chat_model
+        self._llm = ChatOpenAI(
+            model=settings.chat_model,
+            api_key=settings.openai_api_key,
+            temperature=0.3,
+        )
 
     def explain_match(
         self,
@@ -40,14 +43,31 @@ class ScoringService:
             f"Resume:\n{resume_text}\n\n"
             f"Cosine similarity score: {similarity_score:.4f}"
         )
-        response = self._client.chat.completions.create(
-            model=self._model,
-            messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": user_msg},
-            ],
-            temperature=0.3,
+        messages = [
+            ("system", _SYSTEM_PROMPT),
+            ("human", user_msg),
+        ]
+        response = self._llm.invoke(messages)
+        raw = response.content or "{}"
+        data = json.loads(raw)
+        return CandidateResult(**data)
+
+    async def aexplain_match(
+        self,
+        jd_text: str,
+        resume_text: str,
+        similarity_score: float,
+    ) -> CandidateResult:
+        user_msg = (
+            f"Job Description:\n{jd_text}\n\n"
+            f"Resume:\n{resume_text}\n\n"
+            f"Cosine similarity score: {similarity_score:.4f}"
         )
-        raw = response.choices[0].message.content or "{}"
+        messages = [
+            ("system", _SYSTEM_PROMPT),
+            ("human", user_msg),
+        ]
+        response = await self._llm.ainvoke(messages)
+        raw = response.content or "{}"
         data = json.loads(raw)
         return CandidateResult(**data)
