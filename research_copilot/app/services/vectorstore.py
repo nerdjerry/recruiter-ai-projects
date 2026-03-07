@@ -27,10 +27,9 @@ class VectorStoreService:
     """In-memory vector store using numpy cosine similarity."""
 
     def __init__(
-        self, embedding_model: str, vectorstore_path: str, openai_api_key: str
+        self, embedding_model: str, openai_api_key: str
     ) -> None:
         self._embedding_model = embedding_model
-        self._vectorstore_path = vectorstore_path
         self._client = openai.OpenAI(api_key=openai_api_key)
         self._documents: list[DocumentInfo] = []
         self._chunks: list[dict] = []  # {text, doc_id, embedding}
@@ -70,7 +69,7 @@ class VectorStoreService:
         for score, idx in scores[:top_k]:
             c = self._chunks[idx]
             results.append(
-                ToolResult(content=c["text"], source_name="knowledge_base")
+                ToolResult(content=c["text"], source_name="knowledge_base", doc_id=c["doc_id"])
             )
         return results
 

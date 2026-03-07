@@ -1,6 +1,6 @@
 # PROJECT 05 — Personal Finance Agent with Memory
 > **Tier 3 — Advanced (Memory + Tool Calling)**
-> `Python` · `LangChain` · `OpenAI` · `Mem0 / Zep` · `Plaid API` · `SQLite` · `Streamlit`
+> `Python` · `OpenAI API` · `Plaid API` · `SQLite` · `Streamlit`
 
 **One line:** A money-aware agent that tracks your spending patterns, remembers your goals, and surfaces insights unprompted.
 

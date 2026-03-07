@@ -40,7 +40,8 @@ class ParserFactory:
 
     @classmethod
     def register(cls, extension: str, parser_cls: type[BaseParser]) -> None:
-        cls._parsers[extension] = parser_cls
+        ext = extension if extension.startswith(".") else f".{extension}"
+        cls._parsers[ext.lower()] = parser_cls
 
     @classmethod
     def get_parser(cls, filename: str) -> BaseParser:

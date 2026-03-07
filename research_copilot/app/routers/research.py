@@ -10,6 +10,7 @@ from app.models.schemas import (
     ResearchRequest,
     ResearchResponse,
 )
+from app.services.document_parser import extract_text
 
 router = APIRouter(tags=["research"])
 
@@ -36,15 +37,7 @@ async def upload_document(
 ):
     raw = await file.read()
     filename = file.filename or "untitled"
-
-    if filename.lower().endswith(".pdf"):
-        import io
-        from PyPDF2 import PdfReader
-        reader = PdfReader(io.BytesIO(raw))
-        text = "\n".join(page.extract_text() or "" for page in reader.pages)
-    else:
-        text = raw.decode("utf-8", errors="ignore")
-
+    text = extract_text(raw, filename)
     return vectorstore.add_document(filename, text)
 
 

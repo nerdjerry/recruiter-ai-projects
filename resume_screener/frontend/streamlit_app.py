@@ -15,25 +15,27 @@ uploaded_files = st.file_uploader(
     accept_multiple_files=True,
 )
 
-if st.button("Screen Candidates") and job_description and uploaded_files:
-    files = [("resumes", (f.name, f.getvalue(), f.type)) for f in uploaded_files]
-    data = {"job_description": job_description}
+if not job_description or not uploaded_files:
+    if st.button("Screen Candidates"):
+        st.warning("Please provide a job description and at least one resume.")
+else:
+    if st.button("Screen Candidates"):
+        files = [("resumes", (f.name, f.getvalue(), f.type)) for f in uploaded_files]
+        data = {"job_description": job_description}
 
-    with st.spinner("Screening resumes…"):
-        try:
-            resp = requests.post(f"{backend_url}/screen", data=data, files=files, timeout=120)
-            resp.raise_for_status()
-        except requests.RequestException as exc:
-            st.error(f"Request failed: {exc}")
-            st.stop()
+        with st.spinner("Screening resumes…"):
+            try:
+                resp = requests.post(f"{backend_url}/screen", data=data, files=files, timeout=120)
+                resp.raise_for_status()
+            except requests.RequestException as exc:
+                st.error(f"Request failed: {exc}")
+                st.stop()
 
-    results = resp.json()
-    st.subheader("Results")
+        results = resp.json()
+        st.subheader("Results")
 
-    for idx, candidate in enumerate(results["candidates"], start=1):
-        with st.expander(f"#{idx} — {candidate['name']} (Score: {candidate['score']:.2f})"):
-            st.write(candidate["explanation"])
-            if candidate["skill_gaps"]:
-                st.write("**Skill Gaps:**", ", ".join(candidate["skill_gaps"]))
-elif st.button("Screen Candidates"):
-    st.warning("Please provide a job description and at least one resume.")
+        for idx, candidate in enumerate(results["candidates"], start=1):
+            with st.expander(f"#{idx} — {candidate['name']} (Score: {candidate['score']:.2f})"):
+                st.write(candidate["explanation"])
+                if candidate["skill_gaps"]:
+                    st.write("**Skill Gaps:**", ", ".join(candidate["skill_gaps"]))

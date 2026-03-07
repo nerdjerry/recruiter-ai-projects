@@ -33,10 +33,11 @@ class FinanceAgent:
 
     def chat(self, message: str) -> ChatResponse:
         self._memory.add_conversation("user", message)
-        context = self._memory.get_context(message)
 
-        # Extract budget goals from user message
+        # Extract budget goals before computing context so new goals are included
         self._extract_and_store_goals(message)
+
+        context = self._memory.get_context(message)
 
         tool_results = self._route_tools(message)
 

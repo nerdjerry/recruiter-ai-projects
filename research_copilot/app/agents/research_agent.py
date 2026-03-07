@@ -34,7 +34,11 @@ class ResearchAgent:
         for tool in self._tools:
             trace.append(f"Querying {tool.name}...")
             results = tool.run(question)
-            trace.append(f"{tool.name} returned {len(results)} result(s).")
+            if document_ids and tool.name == "knowledge_base":
+                results = [r for r in results if getattr(r, "doc_id", None) in document_ids]
+                trace.append(f"{tool.name} returned {len(results)} result(s) (filtered to doc IDs: {document_ids}).")
+            else:
+                trace.append(f"{tool.name} returned {len(results)} result(s).")
             all_results.extend(results)
 
         # Build numbered source block for the prompt

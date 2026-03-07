@@ -26,7 +26,6 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     _vectorstore = VectorStoreService(
         embedding_model=settings.embedding_model,
-        vectorstore_path=settings.vectorstore_path,
         openai_api_key=settings.openai_api_key,
     )
     tools = [
@@ -48,7 +47,7 @@ app = FastAPI(title="Research Copilot API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

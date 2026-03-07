@@ -1,6 +1,6 @@
 # PROJECT 03 — Autonomous Email Intelligence Agent
 > **Tier 2 — Intermediate (Tool Calling)**
-> `Python` · `OpenAI Functions` · `LangChain` · `Gmail API` · `FastAPI` · `Streamlit`
+> `Python` · `OpenAI API` · `Gmail API` · `FastAPI` · `Streamlit`
 
 **One line:** Read, classify, and draft intelligent replies to emails using LLM-powered intent detection.
 

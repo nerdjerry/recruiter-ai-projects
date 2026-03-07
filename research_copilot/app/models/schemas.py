@@ -38,6 +38,7 @@ class ToolResult(BaseModel):
     content: str
     source_name: str
     source_url: str | None = None
+    doc_id: str | None = None
 
 
 class HealthResponse(BaseModel):

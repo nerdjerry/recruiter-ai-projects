@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    openai_api_key: str = "your-key-here"
+    openai_api_key: str = ""
     chat_model: str = "gpt-4o-mini"
     db_path: str = "./data/feedback.db"
 

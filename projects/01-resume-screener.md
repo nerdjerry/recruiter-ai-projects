@@ -1,6 +1,6 @@
 # PROJECT 01 — AI-Powered Resume Screener
 > **Tier 1 — Beginner Friendly**
-> `Python` · `OpenAI API` · `LangChain` · `FastAPI` · `FAISS` · `Streamlit`
+> `Python` · `OpenAI API` · `FastAPI` · `NumPy` · `Streamlit`
 
 **One line:** Match resumes to job descriptions using semantic scoring and LLM-generated explanations.
 
