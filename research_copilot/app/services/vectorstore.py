@@ -54,7 +54,9 @@ class VectorStoreService:
     def _save(self) -> None:
         """Persist FAISS index to disk."""
         if self._faiss is not None:
-            os.makedirs(os.path.dirname(self._vectorstore_path) or ".", exist_ok=True)
+            parent = os.path.dirname(self._vectorstore_path)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
             self._faiss.save_local(self._vectorstore_path)
 
     def add_document(self, filename: str, text: str) -> DocumentInfo:

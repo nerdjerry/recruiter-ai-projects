@@ -53,7 +53,12 @@ class FinanceAgent:
 
         messages = [("system", system_prompt)]
         for msg in context["conversation"]:
-            role = "human" if msg["role"] == "user" else "ai"
+            if msg["role"] == "user":
+                role = "human"
+            elif msg["role"] == "assistant":
+                role = "ai"
+            else:
+                role = msg["role"]
             messages.append((role, msg["content"]))
 
         try:
