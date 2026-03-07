@@ -1,0 +1,13 @@
+fastapi>=0.115,<1
+uvicorn>=0.32,<1
+python-multipart>=0.0.9,<1
+langchain>=1.2,<2
+langchain-openai>=1.1,<2
+langchain-community>=0.4,<1
+faiss-cpu>=1.13,<2
+pydantic-settings>=2.0,<3
+requests>=2.31,<3
+streamlit>=1.38,<2
+PyPDF2>=3.0,<4
+pytest>=8.0,<9
+python-dotenv>=1.0,<2
